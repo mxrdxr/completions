@@ -1,0 +1,41 @@
+#compdef duti
+
+_duti() {
+  local curcontext="$curcontext" state line
+  typeset -A opt_args
+
+  _arguments -C \
+    '(-h -V -v -s -x -d -l)'{-h,--help}'[print usage and exit]' \
+    '(-h -V -v -s -x -d -l)'{-V,--version}'[print version number and exit]' \
+    '(-h -V -s -x -d -l)-v[verbose output]' \
+    '(-h -V -v -x -d -l)-s[set handler from command line]:bundle ID:_duti_bundle_ids:UTI or extension or URL scheme:_duti_uti_or_ext:role:(all viewer editor shell none)' \
+    '(-h -V -v -s -d -l)-x[print default app for extension]:extension:_duti_extensions' \
+    '(-h -V -v -s -x -l)-d[display default handler for UTI]:UTI:_duti_utis' \
+    '(-h -V -v -s -x -d)-l[display all handlers for UTI]:UTI:_duti_utis' \
+    '(-s -x -d -l)*:settings file or directory:_files'
+}
+
+_duti_bundle_ids() {
+  local -a bundle_ids
+  bundle_ids=(${(f)"$(mdfind kMDItemContentType == 'com.apple.application-bundle' 2>/dev/null | xargs -I {} defaults read {}/Contents/Info CFBundleIdentifier 2>/dev/null | sort -u)"})
+  _describe 'bundle identifier' bundle_ids
+}
+
+_duti_utis() {
+  local -a utis
+  utis=(${(f)"$(/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -dump 2>/dev/null | grep -o 'uti:[[:space:]]*[^[:space:]]*' | awk '{print $2}' | sort -u)"})
+  _describe 'uniform type identifier' utis
+}
+
+_duti_extensions() {
+  _extensions
+}
+
+_duti_uti_or_ext() {
+  _alternative \
+    'utis:uniform type identifier:_duti_utis' \
+    'extensions:file extension:_duti_extensions' \
+    'schemes:URL scheme:(http https ftp ftps ssh mailto tel)'
+}
+
+_duti "$@"
