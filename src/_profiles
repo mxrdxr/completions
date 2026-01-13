@@ -1,0 +1,220 @@
+#compdef profiles
+
+# Zsh completion function for macOS profiles command
+# Based on profiles(1) man page and profiles --help output
+
+local curcontext="$curcontext" state line ret=1
+typeset -A opt_args
+
+# Profile types
+local -a profile_types
+profile_types=(
+  'configuration:Configuration profile'
+  'provisioning:Provisioning profile'
+  'enrollment:Device Enrollment Program (DEP) or MDM enrollment'
+  'bootstraptoken:Bootstrap Token options (requires MDM supervised client)'
+)
+
+# Old-style single commands
+local -a old_commands
+old_commands=(
+  '-P:Print all configuration profiles to console'
+  '-H:Check if configuration profiles are installed'
+  '-C:Display all device profiles'
+  '-D:Delete existing configuration profiles (requires root)'
+  '-d:Delete existing provisioning profiles (requires root)'
+  '-h:Display help section'
+  '-f:Auto confirm any questions'
+  '-v:Enable verbose mode'
+  '-x:Display version number'
+  '-s:Set the filenamepath profile as a startup profile'
+)
+
+# Old-style configuration profile commands
+local -a old_config_commands
+old_config_commands=(
+  '-I:Install a profile'
+  '-R:Remove a profile'
+  '-L:List a user'\''s profiles'
+  '-W:Renew certificates in an installed profile'
+  '-S:Sync up and remove user config profiles'
+  '-N:Re-enable DEP enrollment user notifications'
+)
+
+# Old-style provisioning profile commands
+local -a old_prov_commands
+old_prov_commands=(
+  '-i:Install a provisioning profile from a file'
+  '-r:Remove a provisioning profile based on identifier and uuid'
+  '-c:List all provisioning profiles'
+  '-V:Verify a provisioning profile from a file'
+)
+
+# New-style verbs
+local -a verbs
+verbs=(
+  'help:Show abbreviated help'
+  'list:List profiles for a user or device'
+  'show:Show expanded information for profiles'
+  'remove:Remove profiles'
+  'status:Display status of installed profiles'
+  'sync:Synchronize installed profiles with local users'
+  'renew:Renew certificates or retry enrollment'
+  'validate:Validate provisioning profile or DEP server information'
+  'version:Display current tool version'
+)
+
+_arguments -C \
+  '1: :->verb' \
+  '*:: :->args' && ret=0
+
+case $state in
+  verb)
+    _describe -t verbs 'profiles verb' verbs
+    _describe -t old-commands 'old-style commands' old_commands
+    _describe -t old-config-commands 'old-style config commands' old_config_commands
+    _describe -t old-prov-commands 'old-style provisioning commands' old_prov_commands
+    ret=0
+    ;;
+
+  args)
+    local verb=$words[1]
+
+    case $verb in
+      help|version)
+        # No additional arguments
+        ;;
+
+      list)
+        _arguments \
+          '(-t --type)'{-t,--type}'[Profile type]:profile type:->profile_types' \
+          '(-u --user)'{-u,--user}'[User name]:username:_users' \
+          '(-o --output)'{-o,--output}'[Output path]:output path:_files' \
+          '--all[Display all profiles (when running as root)]' \
+          '--verbose[Display additional information]' \
+          && ret=0
+        ;;
+
+      show)
+        _arguments \
+          '(-t --type)'{-t,--type}'[Profile type]:profile type:->profile_types' \
+          '(-u --user)'{-u,--user}'[User name]:username:_users' \
+          '(-o --output)'{-o,--output}'[Output path]:output path:_files' \
+          '--cached[Use only cached information]' \
+          '--all[Display all profiles (when running as root)]' \
+          '--verbose[Display additional information]' \
+          && ret=0
+        ;;
+
+      remove)
+        _arguments \
+          '(-t --type)'{-t,--type}'[Profile type]:profile type:->profile_types' \
+          '(-u --user)'{-u,--user}'[User name]:username:_users' \
+          '(-i --identifier)'{-i,--identifier}'[Profile identifier]:identifier:' \
+          '--uuid[Profile UUID]:uuid:' \
+          '(-p --path)'{-p,--path}'[File path or - for stdout]:path:_files' \
+          '--password[Password for removal]:password:' \
+          '--forced[Prevent confirmation requests]' \
+          '--all[Remove all profiles for user or device]' \
+          '--verbose[Display additional information]' \
+          && ret=0
+        ;;
+
+      status)
+        _arguments \
+          '(-t --type)'{-t,--type}'[Profile type]:profile type:->profile_types' \
+          '--verbose[Display additional information]' \
+          && ret=0
+        ;;
+
+      sync)
+        _arguments \
+          '(-t --type)'{-t,--type}'[Profile type (configuration only)]:profile type:(configuration)' \
+          '--verbose[Display additional information]' \
+          && ret=0
+        ;;
+
+      renew)
+        _arguments \
+          '(-t --type)'{-t,--type}'[Profile type]:profile type:->profile_types' \
+          '(-i --identifier)'{-i,--identifier}'[Profile identifier]:identifier:' \
+          '(-o --output)'{-o,--output}'[Output path]:output path:_files' \
+          '--verbose[Display additional information]' \
+          && ret=0
+        ;;
+
+      validate)
+        _arguments \
+          '(-t --type)'{-t,--type}'[Profile type]:profile type:->profile_types' \
+          '(-p --path)'{-p,--path}'[File path]:path:_files -g "*.mobileconfig"' \
+          '--verbose[Display additional information]' \
+          && ret=0
+        ;;
+
+      # Old-style commands
+      -I|-R|-W)
+        _arguments \
+          '-F[Profile file path]:path:_files -g "*.mobileconfig"' \
+          '-U[Destination user name]:username:_users' \
+          '-Y[Local user for MDM enrollment]:username:_users' \
+          '-p[Profile identifier]:identifier:' \
+          && ret=0
+        ;;
+
+      -L)
+        _arguments \
+          '-U[User name]:username:_users' \
+          '-o[Output path]:path:_files' \
+          && ret=0
+        ;;
+
+      -P|-C)
+        _arguments \
+          '-o[Output path]:path:_files' \
+          '-v[Enable verbose mode]' \
+          && ret=0
+        ;;
+
+      -D|-d)
+        _arguments \
+          '-f[Auto confirm]' \
+          '-v[Enable verbose mode]' \
+          && ret=0
+        ;;
+
+      -i|-V)
+        _arguments \
+          '-F[Profile file path]:path:_files -g "*.mobileprovision"' \
+          && ret=0
+        ;;
+
+      -r)
+        _arguments \
+          '-p[Profile identifier]:identifier:' \
+          '-u[Profile UUID]:uuid:' \
+          && ret=0
+        ;;
+
+      -s)
+        _arguments \
+          ':profile path:_files -g "*.mobileconfig"' \
+          && ret=0
+        ;;
+
+      -e|-N)
+        _arguments \
+          '-o[Output path]:path:_files' \
+          && ret=0
+        ;;
+    esac
+    ;;
+esac
+
+# Handle profile type selection
+case $state in
+  profile_types)
+    _describe -t profile-types 'profile type' profile_types && ret=0
+    ;;
+esac
+
+return ret
