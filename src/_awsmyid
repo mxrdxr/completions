@@ -1,0 +1,93 @@
+#compdef awsmyid
+
+_awsmyid() {
+    local context curcontext="$curcontext" state line ret=1
+    typeset -A opt_args
+
+    local -a global_opts=(
+        '--config=[Path to config file]:config file:_files'
+        '(-v --verbose)'{-v,--verbose}'[Enable verbose output]'
+    )
+
+    _arguments -C \
+        $global_opts \
+        '(-): :->command' \
+        '(-)*:: :->args' \
+    && ret=0
+
+    case $state in
+        (command)
+            local -a commands=(
+                'clear:Clear cached credentials'
+                'completion:Generate shell completion script'
+                'expires:Show credential expiration time'
+                'help:Help about any command'
+                'login:Authenticate with AWS via SAML'
+                'version:Print version information'
+            )
+            _describe -t commands 'awsmyid command' commands && ret=0
+            ;;
+        (args)
+            curcontext="${curcontext%:*:*}:awsmyid-${words[1]}:"
+            case ${words[1]} in
+                (clear)
+                    _arguments -s \
+                        '--cookiefile=[Path to cookie file]:cookie file:_files' \
+                        $global_opts \
+                    && ret=0
+                    ;;
+                (completion)
+                    _arguments -s \
+                        '(-h --help)'{-h,--help}'[Show help for completion]' \
+                        $global_opts \
+                    && ret=0
+                    ;;
+                (expires)
+                    _arguments -s \
+                        '(-c --credsfile)'{-c,--credsfile=}'[Path to credentials file]:credentials file:_files' \
+                        '(-e --env)'{-e,--env}'[Use environment variables for credentials]' \
+                        '(-p --profile)'{-p,--profile=}'[AWS profile to check]:profile:' \
+                        $global_opts \
+                    && ret=0
+                    ;;
+                (help)
+                    local -a commands=(
+                        'clear:Clear cached credentials'
+                        'completion:Generate shell completion script'
+                        'expires:Show credential expiration time'
+                        'help:Help about any command'
+                        'login:Authenticate with AWS via SAML'
+                        'version:Print version information'
+                    )
+                    _describe -t commands 'awsmyid command' commands && ret=0
+                    ;;
+                (login)
+                    _arguments -s \
+                        '--cookiefile=[Path to cookie file]:cookie file:_files' \
+                        '(-c --credsfile)'{-c,--credsfile=}'[Path to credentials file]:credentials file:_files' \
+                        '(-e --env)'{-e,--env}'[Use environment variables for credentials]' \
+                        '(-f --factor)'{-f,--factor=}'[MFA factor to use]:factor:' \
+                        '--hours=[Session duration in hours]:hours:' \
+                        '--idpuri=[Identity provider URI]:uri:' \
+                        '(-p --profile)'{-p,--profile=}'[AWS profile to use]:profile:' \
+                        '--region=[AWS region]:region:' \
+                        '(-r --role)'{-r,--role=}'[IAM role to assume]:role:' \
+                        '--spinner[Show spinner during login]' \
+                        '(-t --token)'{-t,--token=}'[MFA token]:token:' \
+                        '(-u --user)'{-u,--user=}'[Username for authentication]:user:' \
+                        $global_opts \
+                    && ret=0
+                    ;;
+                (version)
+                    _arguments -s \
+                        $global_opts \
+                    && ret=0
+                    ;;
+            esac
+            ;;
+    esac
+
+    return ret
+}
+
+_awsmyid "$@"
